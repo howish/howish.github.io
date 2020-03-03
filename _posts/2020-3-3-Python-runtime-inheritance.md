@@ -1,4 +1,7 @@
-# Python中模擬於runtime時決定父類別對象的方法
+---
+layout: post
+title: Python中模擬於runtime時決定父類別對象的方法
+---
 
 ## 前言
 最近碰到一個問題是在設計一套API時，想讓使用者(其實就是我自己)在run time時選擇要讓使用的Interface繼承哪一個父類別。
@@ -75,6 +78,7 @@ def get_drawer(brush_name):
             self.draw_line()
     return Brush
 
+# Usage
 drawer = get_drawer('pencil')()
 drawer.draw_line()
 drawer.draw_2_lines()
@@ -91,9 +95,9 @@ class Pencil:
     def draw_line():
         print('Draw line with pencil')
 
-class Brush:
+class MarkPen:
     def draw_line():
-        print('Draw line with brush')
+        print('Draw line with MarkPen')
 
 def choose_brush(brush_name):
     if brush_name == 'pencil'
@@ -131,7 +135,7 @@ class Brush:
 ```
 雖然這樣寫實際上是創造一個實例，並調用實例裡的方法，而不是繼承原本的class，但在操作上可以當作是繼承了一個父類別。
 
-可以進一步用一個中間的 Mixed class 來讓各個 class 的目的更完整：
+可以進一步用一個中間的 Forking class 來讓各個 class 的目的更完整：
 
 ```Python
 ...
@@ -169,13 +173,13 @@ class Brush(_Basicbrush):
         self.draw_line()
         self.draw_line()
 ```
-寫成這樣以後，想要調用或修改"父類別"中的method或是instance都可以。
-與真實的繼承機制還是有差別，調用"父類別"的方法時使用最原始的方法是不行的：
+寫成這樣以後，想要調用或修改"父類別"中的method或是instance都可以。然而這樣在使用時與真實的繼承機制還是有一點點差別，那就是在調用"父類別"的方法時使用本來的方法是不行的：
 ```Python
     #In class Brush
     def draw_line(self):
+        # super().draw_line()         # Fail
         # _Basicbrush.draw_line(self) # Fail
-        self._brush.draw_line() # Safe
+        self._brush.draw_line()       # Safe
 ```
 要將這點Workaround過去其實也是可行的
 只要在_BasicBrush裡面重新map一次共用的方法就好
@@ -188,9 +192,45 @@ class Brush(_Basicbrush):
         self._brush._maybe_other_method()
 ```
 
+## 懶人病
+最後，為了達到懶惰的極致，我把最後的這個workaround包成了一個[函式](https://github.com/howish/python_tools/blob/master/class_structure/forking_class.py)，這讓我以後想做類似的事情時，只要輸入必要的資訊
+```Python
+_BasicBrush = create_forked_class(
+    '_BasicBrush',   # Class name
+    '_brush',        # Instance name
+    '_brush_name',   # Flag name
+    { 
+        'Pencil': Pencil,
+        'MarkPen': MarkPen,
+    },               # Super class options
+    ('draw_line', )  # Methods inherited 
+)
+```
+就直接完成了以上的workaround，想直接調用或是繼承都可以啦！
+```Python
+class MySuperBrush(_BasicBrush):
+    def draw_line(self):
+        print('Draw a Rocket')
+        super().draw_line()
+    
+    def fire_a_rocket(self, num):
+        for _ in range(num):
+            self.draw_line()
+
+# Usage
+msb = MySuperBrush('pencil')
+msb.fire_a_rocket(3)
+```
+運行結果大概如下
+```bash
+~ python my_super_brush_with_pencil.py
+Draw a Rocket
+Draw line with Pencil
+Draw a Rocket
+Draw line with Pencil
+Draw a Rocket
+Draw line with Pencil
+```
 ## 結論
 
-雖然達到了目的，但實際上都只是一些workaround而已。充其量只能算是「模擬」了在runtime時選擇要繼承的父類別。
-
-## 參考資料
-
+雖然達到了目的，但實際上都只是一些workaround而已。充其量只能算是「模擬」了在runtime時選擇要繼承的父類別。不知道是否能有實際意義上的繼承方法呢？
