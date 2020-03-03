@@ -1,7 +1,4 @@
----
-layout: post
-title: Python中模擬於runtime時決定父類別對象的方法
----
+# Python中模擬於runtime時決定父類別對象的方法
 
 ## 前言
 最近碰到一個問題是在設計一套API時，想讓使用者(其實就是我自己)在run time時選擇要讓使用的Interface繼承哪一個父類別。
@@ -45,7 +42,7 @@ class Brush:
 二來是在設計架構的概念上Brush class的層級是與Pencil或MarkPen同一層的，是它的一種擴充而不是wrapper，這樣寫不太符合設計的概念。
 
 
-## 最初的Wordaround
+## 最初的Workaround
 
 在我寫出上面的template之前，我是這樣work around的:
 ```Python
